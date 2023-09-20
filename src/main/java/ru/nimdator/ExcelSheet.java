@@ -38,4 +38,5 @@ public @interface ExcelSheet {
      * Не обязательный параметр названия конкретного листа файла
      */
     String name() default "";
+    boolean ignoreUnkonow() default false;
 }

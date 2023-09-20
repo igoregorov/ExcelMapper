@@ -33,6 +33,7 @@ public class ExcelFileMappingException extends Exception {
         WORKBOOOK_NOT_FOUND("Workbook не найден", -9),
         CONSTRUCTOR_NOT_FOUND("Не задан конструкторк класса", -10),
         CLASS_NOT_MARK_EXCEL("Класс не помечен аннотацией ExcelSheet",-11),
+        COLUMN_NOT_EXISTS("В классе не определена колонка %s",-12),
         ;
 
         private final String description;

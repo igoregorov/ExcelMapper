@@ -1,6 +1,7 @@
 package ru.nimdator;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.math3.util.Pair;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -8,6 +9,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static ru.nimdator.ExcelConstants.EXCEL_DATE_FORMAT;
@@ -32,15 +35,15 @@ public class ExcelObjectBuilder {
      * @throws ParseException
      * @throws NoSuchMethodException
      */
-    public static <T> T getObjFromMap(Class<T> clz, Map<Field, String> classStringMap) throws InvocationTargetException, InstantiationException, IllegalAccessException, ParseException, NoSuchMethodException {
+    public static <T> T getObjFromMap(Class<T> clz, List<Pair<Class<?>, String>> classStringMap)
+            throws InvocationTargetException, InstantiationException, IllegalAccessException, ParseException, NoSuchMethodException {
 
         Object[] objects = new Object[classStringMap.size()];
         Class<?>[] classes = new Class[classStringMap.size()];
         int i = 0;
-        for (Map.Entry<Field, String> entry : classStringMap.entrySet()) {
-            Class<?> fieldClass = entry.getKey().getType();
-            String value = entry.getValue();
-            objects[i] = getObjFromString(fieldClass, value);
+        for (Pair<Class<?>, String> entry : classStringMap) {
+            Class<?> fieldClass = entry.getFirst();
+            objects[i] = getObjFromString(fieldClass, entry.getSecond());
             classes[i++] = fieldClass;
         }
         return clz.cast(clz.getDeclaredConstructor(classes).newInstance(objects));
@@ -66,5 +69,34 @@ public class ExcelObjectBuilder {
             throw new IllegalAccessException("Класс не имеет конструктора String");
         }
         return clz.cast(stringConstructor.newInstance(obj));
+    }
+
+    public static String getExcelSheetClass(Class<?> cls) {
+        ExcelSheet sheetName = cls.getAnnotation(ExcelSheet.class);
+        if (sheetName == null) {
+            return null;
+        }
+        return sheetName.name();
+    }
+
+    public static Map<Field, Integer> getHeaderMapping(Class<?> cls, List<Pair<String, Integer>> headerList) throws ExcelFileMappingException {
+        Map<Field, Integer> mapFields = new LinkedHashMap<>();
+        for (Field field : cls.getDeclaredFields()) {
+            ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
+            if (excelColumn == null) {
+                log.info("column is null for field {}", field.getName());
+                continue;
+            }
+            for (Pair<String, Integer> cell : headerList) {
+                if (cell.getFirst().equals(excelColumn.name()) || cell.getSecond() == excelColumn.index()) {
+                    mapFields.put(field, cell.getSecond());
+                    break;
+                }
+            }
+            if (!mapFields.containsKey(field) && !cls.getAnnotation(ExcelSheet.class).ignoreUnkonow()) {
+                throw new ExcelFileMappingException(ExcelFileMappingException.Kind.COLUMN_NOT_EXISTS, excelColumn.name());
+            }
+        }
+        return mapFields;
     }
 }
