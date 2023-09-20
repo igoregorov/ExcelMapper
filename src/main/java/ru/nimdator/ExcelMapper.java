@@ -2,7 +2,6 @@ package ru.nimdator;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.commons.math3.util.Pair;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -14,17 +13,14 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static ru.nimdator.ExcelConstants.EXCEL_DATE_FORMAT;
 
@@ -68,14 +64,14 @@ public class ExcelMapper {
             throw new ExcelFileMappingException(ExcelFileMappingException.Kind.CLASS_NOT_MARK_EXCEL);
         }
         setSheet(sheetName);
-        Map<Field, Integer> mapHeader = ExcelObjectBuilder.getHeaderMapping(cls, getHeader());
+        List<ExcelPair<Class<?>, Integer>> mapHeader = ExcelObjectBuilder.getHeaderMapping(cls, getHeader());
         List<T> fileContent = new LinkedList<>();
         try {
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) {
                     continue;
                 }
-                List<Pair<Class<?>, String>> mapFieldValue = mapperClassFile(mapHeader, row);
+                List<ExcelPair<Class<?>, String>> mapFieldValue = mapperClassFile(mapHeader, row);
                 T obj = ExcelObjectBuilder.getObjFromMap(cls, mapFieldValue);
                 fileContent.add(obj);
             }
@@ -123,10 +119,10 @@ public class ExcelMapper {
         return cell.getStringCellValue();
     }
 
-    private List<Pair<String, Integer>> getHeader() {
-        List<Pair<String, Integer>> headerList = new LinkedList<>();
+    private List<ExcelPair<String, Integer>> getHeader() {
+        List<ExcelPair<String, Integer>> headerList = new LinkedList<>();
         for (Cell cell : sheet.getRow(0)) {
-            headerList.add(new Pair<>(cell.getStringCellValue(), cell.getColumnIndex()));
+            headerList.add(new ExcelPair<>(cell.getStringCellValue(), cell.getColumnIndex()));
         }
         return headerList;
     }
@@ -138,9 +134,9 @@ public class ExcelMapper {
         }
         this.sheet = workbook.getSheet(sheetName);
     }
-    private List<Pair<Class<?>, String>> mapperClassFile(Map<Field, Integer> mapHeader, Row row) {
-        List<Pair<Class<?>, String>> mapFieldValue = new LinkedList<>();
-        mapHeader.forEach((key, value) -> mapFieldValue.add(new Pair<>(key.getType(), getObjCellData(row.getCell(value), key.getType()))));
+    private List<ExcelPair<Class<?>, String>> mapperClassFile(List<ExcelPair<Class<?>, Integer>> mapHeader, Row row) {
+        List<ExcelPair<Class<?>, String>> mapFieldValue = new LinkedList<>();
+        mapHeader.forEach(key -> mapFieldValue.add(new ExcelPair<>(key.getKey(), getObjCellData(row.getCell(key.getValue()), key.getKey()))));
         return mapFieldValue;
     }
 }
