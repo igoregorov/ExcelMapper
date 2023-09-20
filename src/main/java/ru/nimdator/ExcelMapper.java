@@ -13,9 +13,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import java.lang.reflect.InvocationTargetException;
-
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import java.util.Date;
@@ -26,7 +23,6 @@ import static ru.nimdator.ExcelConstants.EXCEL_DATE_FORMAT;
 
 @Slf4j
 public class ExcelMapper {
-
 
     private final Workbook workbook;
     private Sheet sheet;
@@ -66,31 +62,16 @@ public class ExcelMapper {
         setSheet(sheetName);
         List<ExcelPair<Class<?>, Integer>> mapHeader = ExcelObjectBuilder.getHeaderMapping(cls, getHeader());
         List<T> fileContent = new LinkedList<>();
-        try {
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) {
-                    continue;
-                }
-                List<ExcelPair<Class<?>, String>> mapFieldValue = mapperClassFile(mapHeader, row);
-                T obj = ExcelObjectBuilder.getObjFromMap(cls, mapFieldValue);
-                fileContent.add(obj);
+
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) {
+                continue;
             }
-        } catch (ParseException e) {
-            log.error("ParseException ", e);
-            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.PARSING_EXEPTION);
-        } catch (InvocationTargetException e) {
-            log.error("InvocationTargetException ", e);
-            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.INVOCATION_EXEPTION);
-        } catch (InstantiationException e) {
-            log.error("InstantiationException ", e);
-            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.INSTANT_EXEPTION);
-        } catch (IllegalAccessException e) {
-            log.error("IllegalAccessException ", e);
-            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.ILLEGAL_ACCESS_EXEPTION);
-        } catch (NoSuchMethodException e) {
-            log.error("NoSuchMethodException ", e);
-            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.CONSTRUCTOR_NOT_FOUND);
+            List<ExcelPair<Class<?>, String>> mapFieldValue = mapperClassFile(mapHeader, row);
+            T obj = ExcelObjectBuilder.getObjFromMap(cls, mapFieldValue);
+            fileContent.add(obj);
         }
+
         return fileContent;
     }
     private <T> String getObjCellData(Cell cell, Class<T> requiredClass) {

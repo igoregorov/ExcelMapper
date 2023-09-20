@@ -34,21 +34,38 @@ public class ExcelObjectBuilder {
      * @throws ParseException
      * @throws NoSuchMethodException
      */
-    public static <T> T getObjFromMap(Class<T> clz, List<ExcelPair<Class<?>, String>> classStringMap)
-            throws InvocationTargetException, InstantiationException, IllegalAccessException, ParseException, NoSuchMethodException {
+    public static <T> T getObjFromMap(Class<T> clz, List<ExcelPair<Class<?>, String>> classStringMap) throws ExcelFileMappingException {
 
         Object[] objects = new Object[classStringMap.size()];
         Class<?>[] classes = new Class[classStringMap.size()];
         int i = 0;
-        for (ExcelPair<Class<?>, String> entry : classStringMap) {
-            Class<?> fieldClass = entry.getKey();
-            objects[i] = getObjFromString(fieldClass, entry.getValue());
-            classes[i++] = fieldClass;
-        }
+        try {
+            for (ExcelPair<Class<?>, String> entry : classStringMap) {
+                Class<?> fieldClass = entry.getKey();
+                objects[i] = getObjFromString(fieldClass, entry.getValue());
+                classes[i++] = fieldClass;
+            }
         return clz.cast(clz.getDeclaredConstructor(classes).newInstance(objects));
+        } catch (ParseException e) {
+            log.error("ParseException ", e);
+            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.PARSING_EXEPTION);
+        } catch (InvocationTargetException e) {
+            log.error("InvocationTargetException ", e);
+            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.INVOCATION_EXEPTION);
+        } catch (InstantiationException e) {
+            log.error("InstantiationException ", e);
+            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.INSTANT_EXEPTION);
+        } catch (IllegalAccessException e) {
+            log.error("IllegalAccessException ", e);
+            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.ILLEGAL_ACCESS_EXEPTION);
+        } catch (NoSuchMethodException e) {
+            log.error("NoSuchMethodException ", e);
+            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.CONSTRUCTOR_NOT_FOUND);
+        }
     }
 
-    public static <T> T getObjFromString(Class<T> clz, String obj) throws InvocationTargetException, InstantiationException, IllegalAccessException, ParseException {
+    public static <T> T getObjFromString(Class<T> clz, String obj)
+            throws InvocationTargetException, InstantiationException, IllegalAccessException, ParseException {
         log.info("Operation at {}", obj);
         Constructor<?> stringConstructor = null;
         if (clz.isAssignableFrom(String.class)) {
