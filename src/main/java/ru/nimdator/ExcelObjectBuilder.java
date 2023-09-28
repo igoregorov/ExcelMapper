@@ -2,20 +2,13 @@ package ru.nimdator;
 
 import lombok.extern.slf4j.Slf4j;
 
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
-import static ru.nimdator.ExcelConstants.EXCEL_DATE_FORMAT;
-
 @Slf4j
-public class ExcelObjectBuilder {
+public final class ExcelObjectBuilder {
     private ExcelObjectBuilder() {
         throw new IllegalStateException("Utility class");
     }
@@ -26,7 +19,7 @@ public class ExcelObjectBuilder {
      * classStringMap.
      * Важно, чтобы при заполнении classStringMap, сохранялся порядок типов
      * порождающего класса. Рекомендуется использовать LinkedHashMap.
-     * @param clz - порождаюбщий класс
+     * @param tClass - порождаюбщий класс
      * @param classStringMap - именованный упорядоченный словарь полеКласса-Значение
      * @throws InvocationTargetException
      * @throws InstantiationException
@@ -34,21 +27,16 @@ public class ExcelObjectBuilder {
      * @throws ParseException
      * @throws NoSuchMethodException
      */
-    public static <T> T getObjFromMap(Class<T> clz, List<ExcelPair<Class<?>, String>> classStringMap) throws ExcelFileMappingException {
-
+    public static <T> T getObjFromMap(Class<T> tClass, List<Object> classStringMap, List<ColumnProperty> columnProperty) throws ExcelFileMappingException {
         Object[] objects = new Object[classStringMap.size()];
         Class<?>[] classes = new Class[classStringMap.size()];
         int i = 0;
         try {
-            for (ExcelPair<Class<?>, String> entry : classStringMap) {
-                Class<?> fieldClass = entry.getKey();
-                objects[i] = getObjFromString(fieldClass, entry.getValue());
-                classes[i++] = fieldClass;
+            for (Object entry : classStringMap) {
+                objects[i] = entry;
+                classes[i] = columnProperty.get(i++).getTClass();
             }
-        return clz.cast(clz.getDeclaredConstructor(classes).newInstance(objects));
-        } catch (ParseException e) {
-            log.error("ParseException ", e);
-            throw new ExcelFileMappingException(ExcelFileMappingException.Kind.PARSING_EXEPTION);
+        return tClass.cast(tClass.getDeclaredConstructor(classes).newInstance(objects));
         } catch (InvocationTargetException e) {
             log.error("InvocationTargetException ", e);
             throw new ExcelFileMappingException(ExcelFileMappingException.Kind.INVOCATION_EXEPTION);
@@ -64,56 +52,27 @@ public class ExcelObjectBuilder {
         }
     }
 
-    public static <T> T getObjFromString(Class<T> clz, String obj)
-            throws InvocationTargetException, InstantiationException, IllegalAccessException, ParseException {
-        log.info("Operation at {}", obj);
-        Constructor<?> stringConstructor = null;
-        if (clz.isAssignableFrom(String.class)) {
-            return clz.cast(obj);
-        }
-        if (clz.isAssignableFrom(Date.class)) {
-            SimpleDateFormat formatter = new SimpleDateFormat(EXCEL_DATE_FORMAT);
-            return clz.cast(formatter.parse(obj));
-        }
-        for (Constructor<?> constructor : clz.getDeclaredConstructors()) {
-            Class<?>[] clses = constructor.getParameterTypes();
-            if (clses.length == 1 && String.class.isAssignableFrom(clses[0])) {
-                stringConstructor = constructor;
-            }
-        }
-        if (stringConstructor == null) {
-            throw new IllegalAccessException("Класс не имеет конструктора String");
-        }
-        return clz.cast(stringConstructor.newInstance(obj));
-    }
-
-    public static String getExcelSheetClass(Class<?> cls) {
-        ExcelSheet sheetName = cls.getAnnotation(ExcelSheet.class);
-        if (sheetName == null) {
-            return null;
-        }
-        return sheetName.name();
-    }
-
-    public static List<ExcelPair<Class<?>, Integer>> getHeaderMapping(Class<?> cls, List<ExcelPair<String, Integer>> headerList) throws ExcelFileMappingException {
-        List<ExcelPair<Class<?>, Integer>> mapFields = new LinkedList<>();
-        for (Field field : cls.getDeclaredFields()) {
-            ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
+    public static List<Integer> getHeaderMapping(List<String> headerList, List<ColumnProperty> propertyList, boolean ignoreUnknown) throws ExcelFileMappingException {
+        List<Integer> mapFields = new LinkedList<>();
+        for (ColumnProperty field : propertyList) {
+            String name = field.getColumnName();
+            int index = field.getColumnIndex();
             boolean isFound = false;
-            if (excelColumn == null) {
-                log.info("column is null for field {}", field.getName());
-                continue;
-            }
-            for (ExcelPair<String, Integer> cell : headerList) {
-                if (cell.getKey().equals(excelColumn.name()) || cell.getValue() == excelColumn.index()) {
-                    mapFields.add(new ExcelPair<>(field.getType(), cell.getValue()));
+            for (int i =0; i < headerList.size(); i++) {
+                String headerCol = headerList.get(i);
+                if (headerCol.equals(name) || i == index) {
+                    log.debug("Headet col {} has index {} mapped with field {} at class {}", headerCol, i, name, field.getTClass());
+                    mapFields.add(i);
                     isFound = true;
                     break;
                 }
             }
-            if (!isFound && !cls.getAnnotation(ExcelSheet.class).ignoreUnkonow()) {
-                throw new ExcelFileMappingException(ExcelFileMappingException.Kind.COLUMN_NOT_EXISTS, excelColumn.name());
+            if (isFound) continue;
+            if (!ignoreUnknown) {
+                throw new ExcelFileMappingException(ExcelFileMappingException.Kind.COLUMN_NOT_EXISTS, name);
             }
+            mapFields.add(-1);
+            log.debug("Headet col {} has index {} mapped with field {} at class {}", null, (mapFields.size() - 1), name, field.getTClass());
         }
         return mapFields;
     }

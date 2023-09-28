@@ -1,0 +1,12 @@
+
+Ю
+java:S1186("АAdd a nested comment explaining why this method is empty, throw an UnsupportedOperationException or complete the implementation.(Ё░√Я8╥В╨рк1
+J
+java:S1481#"(Remove this unused "row" local variable.(╦╪с∙√    8╟Ўпрк1
+J	java:S108#")Either remove or fill this block of code.(╦╪с∙√    8╟Ўпрк1
+U
+java:S1854:"9Remove this useless assignment to local variable "field".(ї▀ч8╔Ўпрк1
+S
+java:S11726"1Remove this unused method parameter "fieldValue".(ъ┌┘П     8╔Ўпрк1
+F
+java:S1481:"*Remove this unused "field" local variable.(ї▀ч8╔Ўпрк1

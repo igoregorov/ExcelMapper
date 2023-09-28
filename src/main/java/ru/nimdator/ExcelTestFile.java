@@ -1,24 +1,26 @@
 package ru.nimdator;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Date;
 
-@ExcelSheet
+@ExcelSheet(ignoreUnkonow = true)
 @Getter
 @RequiredArgsConstructor
 @ToString
 public class ExcelTestFile {
-    @ExcelColumn(name = "test1")
-    private final String fld1;
     @ExcelColumn(name = "test2")
     private final Integer fld2;
     @ExcelColumn(name = "test3")
     private final Date fld3;
-    private Double fld4;
+    @ExcelColumn(name = "test1")
+    private final String fld1;
+    @ExcelColumn(name = "test4")
+    private final Double fld4;
+    @ExcelColumn(name = "test5")
+    private final Double fld5;
+    @ExcelColumn(name = "test6")
+    private final Double fld6;
 }
