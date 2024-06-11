@@ -69,12 +69,16 @@ public class ExcelMapper {
             }
             Cell cell = row.getCell(colPosition);
             Class<?> reqClass = propertyList.get(i).getTClass();
-            log.debug("Cell col {} and class is {}", cell.getColumnIndex(), reqClass.getName());
+            log.debug("Cell col {} and class is {}", (cell != null ? cell.getColumnIndex() : null), (cell != null ? reqClass.getName() : null));
+            log.debug("Cell value is {}", getCellValue(cell, reqClass));
             mapFieldValue.add(getCellValue(cell, reqClass));
         }
         return mapFieldValue;
     }
     private <T> T getCellValue(Cell cell, Class<T> reqClass) throws ExcelFileMappingException {
+        if (cell == null) {
+            return null;
+        }
         try {
             return getObjCellData(cell, reqClass);
         } catch (IllegalStateException | NumberFormatException | ClassCastException e) {
@@ -89,8 +93,30 @@ public class ExcelMapper {
         }
     }
     private <T> T getObjCellData(Cell cell, Class<T> requiredClass) {
+        if (cell == null) {
+            return null;
+        }
         if (requiredClass.isAssignableFrom(Date.class)) {
             return CellData.getObjCellData(cell.getDateCellValue(), requiredClass);
+        }
+
+        Object obj;
+
+        switch (cell.getCellType()) {
+            case _NONE, FORMULA, BOOLEAN, ERROR -> log.debug("null");
+            case NUMERIC -> {
+                obj = CellData.getObjCellData(cell.getNumericCellValue(), requiredClass);
+                log.debug("NUMERIC {}", obj);
+
+            }
+            case BLANK -> {
+                obj = CellData.getObjCellData(requiredClass);
+                log.debug("BLANK {}", obj);
+            }
+            default -> {
+                obj = CellData.getObjCellData(cell.getStringCellValue(), requiredClass);
+                log.debug("DEFAULT {}", obj);
+            }
         }
 
         return requiredClass.cast(

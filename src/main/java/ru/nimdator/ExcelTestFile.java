@@ -21,6 +21,9 @@ public class ExcelTestFile {
     private final Double fld4;
     @ExcelColumn(name = "test5")
     private final Double fld5;
-    @ExcelColumn(name = "test6")
-    private final Double fld6;
+    @ExcelColumn(name = "tes6")
+    private final String fld6;
+    @ExcelColumn(name = "ИНН")
+    private final String colConsignorInn;
+
 }

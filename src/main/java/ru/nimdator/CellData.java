@@ -60,6 +60,7 @@ public abstract class CellData {
             return a.longValue();
         }
         static String toString(Double a) {
+            if (a % 1 == 0D) return String.valueOf(a.longValue());
             return String.valueOf(a);
         }
         static BigDecimal toBigDecimal(String s) {
