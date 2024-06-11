@@ -1,12 +1,17 @@
 package ru.nimdator;
 
 import java.text.MessageFormat;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class Main {
     public static void main(String[] args) {
-        List<ExcelTestFile> fileContent = null;
+       processFile();
+    }
+
+    public static void processFile() {
+        List<ExcelTestFile> fileContent = new LinkedList<>();
         try {
             ExcelMapper file = new ExcelMapper("test1.xlsx");
             fileContent = file.getFileContent(ExcelTestFile.class);

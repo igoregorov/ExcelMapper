@@ -39,4 +39,5 @@ public @interface ExcelSheet {
      */
     String name() default "";
     boolean ignoreUnkonow() default false;
+    boolean readHeader() default true;
 }
